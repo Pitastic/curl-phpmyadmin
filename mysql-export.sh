@@ -14,14 +14,14 @@
 # This saves dumps of your Database using CURL and connecting to
 # phpMyAdmin (via HTTPS), keeping the 10 latest backups by default
 #
-# Tested on phpMyAdmin 3.4.5
+# Tested on phpMyAdmin 4.0.9
 #
 # For those interested in debugging/adapting this script, the firefox
 # add-on LiveHttpHeaders is a very interesting extension to debug HTTP
 # transactions and guess what's needed to develop such a CURL-based
 # script.
 #
-# Arguments: mysql-export.sh [-h|--help] [--stdout] [--tables=<table_name>,<table_name>] [--add-drop] [--apache-user=<apache_http_user>] [--apache-password=<apache_http_password>] [--phpmyadmin-user=<phpmyadmin_user>] [--phpmyadmin-password=<phpmyadmin_password>] [--database=<database>] [--host=<phpmyadmin_host>] [--use-keychain]
+# Arguments: mysql-export.sh [-h|--help] [--stdout] [--tables=<table_name>,<table_name>] [--add-drop] [--apache-user=<apache_http_user>] [--apache-password=<apache_http_password>] [--phpmyadmin-user=<phpmyadmin_user>] [--phpmyadmin-password=<phpmyadmin_password>] [--database=<database>] [--host=<phpmyadmin_host>] [--use-keychain] [--export-type=<mode>]
 #	-h, --help: Print help
 # 	--stdout: Write SQL (gzipped) in stdout
 #	--tables: Export only particular tables
@@ -33,6 +33,7 @@
 #	--database=<database>: Database to be exported
 #	--host=<phpmyadmin_host>: PhpMyAdmin host
 #	--use-keychain: Use Mac OS X keychain to get passwords from. In that case --apache-password and --phpmyadmin-password will be used as account name for search in Mac Os X keychain. 
+#	--export-type=<type>: Export only structure, only data or structure_and_data
 #
 # Common uses: mysql-export.sh --tables=hotel_content_provider --add-drop --database=hs --stdout --use-keychain --apache-user=betatester --phpmyadmin-user=hs --apache-password=www.example.com\ \(me\) --phpmyadmin-password=phpmyadmin.example.com --host=https://www.example.com/phpmyadmin | gunzip | mysql -u root -p testtable
 #	       exports and imports on the fly in local db
@@ -51,6 +52,7 @@ COMPRESSION=on
 ADD_DROP=1
 TMP_FOLDER="/tmp"
 USE_KEYCHAIN=0
+EXTYPE="structure_and_data" # data || structure_and_data || structure
 
 # End of customisations
 
@@ -63,7 +65,7 @@ do
 	if [ $arg == '-h' ] || [ $arg == '--help' ]
 	then
 		cat << EOF
-Arguments: mysql-export.sh [-h|--help] [--stdout] [--tables=<table_name>,<table_name>] [--add-drop] [--apache-user=<apache_http_user>] [--apache-password=<apache_http_password>] [--phpmyadmin-user=<phpmyadmin_user>] [--phpmyadmin-password=<phpmyadmin_password>] [--database=<database>] [--host=<phpmyadmin_host>] [--use-keychain]
+Arguments: mysql-export.sh [-h|--help] [--stdout] [--tables=<table_name>,<table_name>] [--add-drop] [--apache-user=<apache_http_user>] [--apache-password=<apache_http_password>] [--phpmyadmin-user=<phpmyadmin_user>] [--phpmyadmin-password=<phpmyadmin_password>] [--database=<database>] [--host=<phpmyadmin_host>] [--use-keychain] [--export-type=<mode>]
        -h, --help: Print help
        --stdout: Write SQL (gzipped) in stdout
        --tables: Export only particular tables
@@ -75,6 +77,7 @@ Arguments: mysql-export.sh [-h|--help] [--stdout] [--tables=<table_name>,<table_
        --database=<database>: Database to be exported
        --host=<phpmyadmin_host>: PhpMyAdmin host
        --use-keychain: Use Mac OS X keychain to get passwords from. In that case --apache-password and --phpmyadmin-password will be used as account name for search in Mac Os X keychain. 
+       --extype=<mode>: Export only structure, only data or structure_and_data
 
  Common uses: mysql-export.sh --tables=hotel_content_provider --add-drop --database=hs --stdout --use-keychain --apache-user=betatester --phpmyadmin-user=hs --apache-password=www.example.com\ \(me\) --phpmyadmin-password=phpmyadmin.example.com --host=https://www.example.com/phpmyadmin | gunzip | mysql -u root -p testtable
 	exports and imports on the fly in local db
@@ -115,6 +118,9 @@ exit 0
 	elif [[ $arg == '--use-keychain' ]]
 	then
 		USE_KEYCHAIN=1
+	elif [[ $arg =~ '--extype' ]]
+	then
+		EXTYPE=${arg:9}
 	fi
 done
 
@@ -141,7 +147,7 @@ fi
 apache_auth_params="--anyauth -u$APACHE_USER:$APACHE_PASSWD"
 
 curl -s -k -D $TMP_FOLDER/curl.headers -L -c $TMP_FOLDER/cookies.txt $apache_auth_params $REMOTE_HOST/index.php > $result
-    token=$(grep link $result | grep 'phpmyadmin.css.php' | grep token | sed "s/^.*token=//" | sed "s/&.*//" )
+    token=$(grep link $result | grep 'phpmyadmin.css.php' | grep token | sed "s/^.*token=//" | sed "s/&.*//" | cut -d "'" -f1)
 
     cookie=$(cat $TMP_FOLDER/cookies.txt | cut  -f 6-7 | grep phpMyAdmin | cut -f 2)
 
@@ -213,7 +219,7 @@ post_params="$post_params&php_array_structure_or_data=data"
 post_params="$post_params&sql_header_comment="
 post_params="$post_params&sql_include_comments=something"
 post_params="$post_params&sql_compatibility=NONE"
-post_params="$post_params&sql_structure_or_data=structure_and_data"
+post_params="$post_params&sql_structure_or_data=$EXTYPE"
 post_params="$post_params&sql_if_not_exists=something"
 post_params="$post_params&sql_auto_increment=something"
 post_params="$post_params&sql_backquotes=something"

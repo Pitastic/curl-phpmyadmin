@@ -33,7 +33,7 @@
 #	--database=<database>: Database to be exported
 #	--host=<phpmyadmin_host>: PhpMyAdmin host
 #	--use-keychain: Use Mac OS X keychain to get passwords from. In that case --apache-password and --phpmyadmin-password will be used as account name for search in Mac Os X keychain. 
-#	--export-type=<type>: Export only structure, only data or structure_and_data
+#	--extype=<mode>: Export only structure, only data or structure_and_data
 #
 # Common uses: mysql-export.sh --tables=hotel_content_provider --add-drop --database=hs --stdout --use-keychain --apache-user=betatester --phpmyadmin-user=hs --apache-password=www.example.com\ \(me\) --phpmyadmin-password=phpmyadmin.example.com --host=https://www.example.com/phpmyadmin | gunzip | mysql -u root -p testtable
 #	       exports and imports on the fly in local db
@@ -65,7 +65,7 @@ do
 	if [ $arg == '-h' ] || [ $arg == '--help' ]
 	then
 		cat << EOF
-Arguments: mysql-export.sh [-h|--help] [--stdout] [--tables=<table_name>,<table_name>] [--add-drop] [--apache-user=<apache_http_user>] [--apache-password=<apache_http_password>] [--phpmyadmin-user=<phpmyadmin_user>] [--phpmyadmin-password=<phpmyadmin_password>] [--database=<database>] [--host=<phpmyadmin_host>] [--use-keychain] [--export-type=<mode>]
+Arguments: mysql-export.sh [-h|--help] [--stdout] [--tables=<table_name>,<table_name>] [--add-drop] [--apache-user=<apache_http_user>] [--apache-password=<apache_http_password>] [--phpmyadmin-user=<phpmyadmin_user>] [--phpmyadmin-password=<phpmyadmin_password>] [--database=<database>] [--host=<phpmyadmin_host>] [--use-keychain] [--extype=<mode>]
        -h, --help: Print help
        --stdout: Write SQL (gzipped) in stdout
        --tables: Export only particular tables
